@@ -1,0 +1,16 @@
+scp -r scp_docker_files/ peter@192.168.56.56:/home/peter/
+ssh peter@192.168.56.56
+
+docker build -t my-web-image -f Dockerfile .
+
+docker images
+
+docker run -it --name my-web-app --rm -d -p 8000:80 -v feedback:/app/feedback -v "/home/peter/scp_docker_files/data-volumes-08-args-and-env":/app -v /app/node_modules my-vol-image:1
+
+docker ps -a
+
+docker stop my-web-app
+
+docker volume ls
+
+docker volume rm feedback
