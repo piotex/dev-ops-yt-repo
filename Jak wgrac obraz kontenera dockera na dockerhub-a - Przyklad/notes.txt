@@ -1,0 +1,11 @@
+docker login
+
+https://hub.docker.com
+
+docker tag my-image dockerhub_login/my-image:1
+
+docker push dockerhub_login/my-image:1
+
+docker pull dockerhub_login/my-image:1
+
+docker images
