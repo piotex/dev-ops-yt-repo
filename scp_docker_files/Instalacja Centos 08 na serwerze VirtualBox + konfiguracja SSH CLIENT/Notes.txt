@@ -1,0 +1,5 @@
+# Link to iso images:
+https://www.centos.org/download/
+
+# Command to configure network interfaces on running machine
+nmtui
