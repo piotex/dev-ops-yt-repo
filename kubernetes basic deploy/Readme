@@ -1,0 +1,66 @@
+minikube start
+
+minikube status
+
+
+
+- Main - deploy
+    
+    docker build -t piotex/kub-first-app-repo .
+    
+    docker push piotex/kub-first-app-repo
+
+    kubectl create deployment first-app --image=piotex/kub-first-app-repo
+    
+    kubectl get pods
+    
+    minikube dashboard
+    
+    # http://127.0.0.1:64321/api/v1/namespaces/kubernetes-dashboard/services/http:kubernetes-dashboard:/proxy/#/workloads?namespace=default
+    
+    kubectl expose deployment first-app --type=LoadBalancer --port 8080
+    
+    kubectl get services
+    
+    minikube service first-app
+    
+    http://192.168.59.102:30064/error
+    
+    kubectl get pods
+    
+    kubectl scale deployment/first-app --replicas=3
+    
+    kubectl scale deployment/first-app --replicas=1
+    
+
+- Code Chaned
+    
+    `docker build -t piotex/kub-first-app-repo:2 .`
+    
+    `docker push piotex/kub-first-app-repo:2`
+    
+    [https://hub.docker.com/r/piotex/kub-first-app-repo](https://hub.docker.com/r/piotex/kub-first-app-repo)
+    
+    `kubectl set image deployment/first-app kub-first-app=piotex/kub-first-app-repo:2`
+    
+    `kubectl set image deployment/first-app [container name]=piotex/kub-first-app-repo:2`
+    
+    `kubectl rollout status deployment/first-app` 
+    
+- Historia zmian
+    
+    `kubectl rollout history deployment/first-app` 
+    
+    `kubectl rollout history deployment/first-app --revision=3` 
+    
+- Cofnięcie zmiany obrazu
+    
+    `kubectl rollout undo deployment/first-app` 
+    
+    `kubectl rollout undo deployment/first-app --to-revision=1` 
+    
+- Usunięcie serwisu
+    
+    `kubectl delete service first-app`  
+    
+    `kubectl delete deployment first-app`

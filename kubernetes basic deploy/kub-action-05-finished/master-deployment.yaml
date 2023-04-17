@@ -19,7 +19,7 @@ kind: Deployment
 metadata:
   name: second-app-deployment
 spec:
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
       app: second-app
@@ -32,6 +32,6 @@ spec:
     spec: 
       containers:
         - name: second-node
-          image: piotex/kub-first-app-repo
+          image: academind/kub-first-app:2
         # - name: ...
         #   image: ...
