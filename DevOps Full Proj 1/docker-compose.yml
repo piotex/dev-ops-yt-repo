@@ -1,0 +1,96 @@
+version: "3.8"
+services:
+  gitlab:
+    image: 'gitlab/gitlab-ce:latest'
+    restart: always
+    container_name: gitlab
+    privileged: true
+    ports:
+      - 8082:80
+      - 8022:22
+    volumes:
+      - /devops_proj/docker_volumes/gitlab/config:/etc/gitlab
+      - /devops_proj/docker_volumes/gitlab/logs:/var/log/gitlab
+      - /devops_proj/docker_volumes/gitlab/data:/var/opt/gitlab
+
+  jenkins:
+    image: jenkins/jenkins
+    restart: always
+    container_name: jenkins
+    ports:
+      - 8081:8080
+      - 50000:50000
+    volumes:
+      - /devops_proj/docker_volumes/jenkins_home:/var/jenkins_home
+
+  jenkins_slave:
+    image: jenkins/ssh-agent:jdk11
+    restart: always
+    user: root
+    expose:
+      - 22
+    environment:
+      - JENKINS_AGENT_SSH_PUBKEY=000000000000000000000000
+    stdin_open: true
+    tty: true
+    depends_on:
+      - jenkins
+  
+  sonar:
+    image: sonarqube:community
+    container_name: sonar
+    restart: always
+    # environment:
+    #   SONAR_JDBC_USERNAME: sonar
+    #   SONAR_JDBC_PASSWORD: sonar
+    volumes:
+      - /devops_proj/docker_volumes/sonar/data:/opt/sonarqube/data
+      - /devops_proj/docker_volumes/sonar/extensions:/opt/sonarqube/extensions
+      - /devops_proj/docker_volumes/sonar/logs:/opt/sonarqube/logs
+    ports:
+      - "8083:9000"
+
+  nexus:
+    image: sonatype/docker-nexus3
+    container_name: nexus
+    restart: always
+    privileged: true
+    volumes:
+      - /devops_proj/docker_volumes/nexus/data:/nexus-data
+    ports:
+      - "8084:8081"
+  
+  selenium_hub:
+    image: selenium/hub:3.141.59-20210929
+    container_name: selenium_hub
+    restart: always
+    ports:
+      - "4442:4442"
+      - "4443:4443"
+      - "4444:4444"
+      
+  chrome:
+    image: selenium/node-chrome:3.141.59-20210929
+    container_name: selenium_chrome
+    restart: always
+    shm_size: 2gb
+    depends_on:
+      - selenium_hub
+    environment:
+      - HUB_HOST=selenium_hub
+      - SE_EVENT_BUS_HOST=selenium_hub
+      - SE_EVENT_BUS_PUBLISH_PORT=4442
+      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+
+  firefox:
+    image: selenium/node-firefox:3.141.59-20210929
+    container_name: selenium_firefox
+    restart: always
+    shm_size: 2gb
+    depends_on:
+      - selenium_hub
+    environment:
+      - HUB_HOST=selenium_hub
+      - SE_EVENT_BUS_HOST=selenium_hub
+      - SE_EVENT_BUS_PUBLISH_PORT=4442
+      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
