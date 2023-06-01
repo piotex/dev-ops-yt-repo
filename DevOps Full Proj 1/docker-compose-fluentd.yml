@@ -1,0 +1,13 @@
+version: "3"
+services:
+  fluentd:
+    container_name: fluentd
+    user: root
+    image: fluent/fluentd:v1.11-debian
+    volumes:
+      - /var/lib/docker/containers:/fluentd/log/docker                         # input files  :/fluentd/log/docker
+      - /devops_proj/docker_volumes/jenkins_home/jobs:/fluentd/log/jenkins     # input files  :/fluentd/log/jenkins # => test_freestyle_1/builds/3/log
+      - /devops_proj/fluent.conf:/fluentd/etc/fluent.conf
+      - /devops_proj/docker_volumes/fluentd/logs:/output/
+    logging:
+      driver: "local"

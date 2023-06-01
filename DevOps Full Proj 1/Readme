@@ -1,0 +1,9 @@
+docker-compose -f docker-compose.yml up -d
+docker-compose -f docker-compose-graylog.yml up -d
+docker-compose -f docker-compose-fluentd.yml up -d
+
+docker-compose -f docker-compose.yml down
+docker-compose -f docker-compose-graylog.yml down
+docker-compose -f docker-compose-fluentd.yml down
+
+echo "============" | nc 192.168.56.56 1514
