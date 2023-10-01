@@ -1,0 +1,6 @@
+#!/bin/ash
+yum update -y
+yum install -y httpd
+systemctl start httpd
+systemctl enable httpd
+echo "hi peter from $(hostname -f)" > /var/www/html/index.html
