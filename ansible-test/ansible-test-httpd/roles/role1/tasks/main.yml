@@ -4,6 +4,8 @@
     name: apache2
     state: present
   become: true
+  tags:
+    - install
 
 - name: Start and enable Apache service on Ubuntu
   service:
@@ -11,3 +13,14 @@
     state: started
     enabled: true
   become: true
+  tags:
+    - install
+    - start
+  
+- name: Stop Apache (apache2) service on Ubuntu
+  systemd:
+    name: apache2
+    state: stopped
+  become: true
+  tags:
+    - stop

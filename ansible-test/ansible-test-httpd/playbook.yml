@@ -1,5 +1,5 @@
 ---
-- name: Playbook z wieloma rolami
+- name: Apache Ubuntu playbook
   hosts: local
   gather_facts: no
   become: true

@@ -1,10 +1,17 @@
 ---
 - name: Check Apache (apache2) service status on Ubuntu
-  systemd:
-    name: apache2
+  shell:
+    cmd: "systemctl status apache2 | grep Active"
   register: apache_status
-  ignore_errors: yes
+  tags:
+    - status
 
-- name: Display Apache service status (active/running only)
+- name: Display Apache service status 
   debug:
-    msg: "Apache service is {{ 'active (running)' if apache_status and apache_status.status == 'active' else 'inactive or not present' }}"
+    msg: "Status: {{ apache_status.stdout_lines | first }}"
+  tags:
+    - status
+
+
+
+    
