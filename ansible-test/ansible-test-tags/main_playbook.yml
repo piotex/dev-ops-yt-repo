@@ -1,0 +1,13 @@
+---
+- name: Podstawowy playbook z tagiem
+  hosts: all
+  tasks:
+    - name: Zadanie 1
+      debug:
+        msg: "To jest zadanie 1."
+
+    - name: Zadanie 2
+      debug:
+        msg: "To jest zadanie 2."
+      tags:
+        - tag1
