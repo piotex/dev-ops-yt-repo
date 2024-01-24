@@ -1,13 +1,23 @@
 ---
 - name: Podstawowy playbook z tagiem
   hosts: all
-  tasks:
-    - name: Zadanie 1
-      debug:
-        msg: "To jest zadanie 1."
+  gather_facts: no
+  roles:
+    - {role: my_role}
+  tags:
+    - tag1
 
-    - name: Zadanie 2
-      debug:
-        msg: "To jest zadanie 2."
+
+  tasks:
+    - name: 'task 1'
+      include: task1_playbook.yml
       tags:
-        - tag1
+          - tag1
+
+
+
+    # - name: main task
+    #   debug:
+    #     msg: "To jest main task."
+    #   tags:
+    #     - tag1
