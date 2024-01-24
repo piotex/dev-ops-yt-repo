@@ -1,0 +1,13 @@
+---
+- name: Install Apache (httpd) on Ubuntu
+  apt:
+    name: apache2
+    state: present
+  become: true
+
+- name: Start and enable Apache service on Ubuntu
+  service:
+    name: apache2
+    state: started
+    enabled: true
+  become: true
