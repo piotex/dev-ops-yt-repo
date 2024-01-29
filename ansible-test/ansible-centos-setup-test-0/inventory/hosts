@@ -1,2 +1,5 @@
 [local]
 localhost ansible_connection=local
+
+[app_test]
+192.168.56.57

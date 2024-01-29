@@ -1,5 +1,24 @@
 # Setup slave machine
-[a link](https://www.youtube.com/watch?v=wwnQy4XVJ6I&list=WL&index=150)
+[Download Centos 9 x86_64](https://www.centos.org/download/)
+[How to CentOS and Static IP](https://www.youtube.com/watch?v=wwnQy4XVJ6I&list=WL&index=150)
+Centos:
+```
+nmtui 
+```
+```
+useradd jenkins_agent
+passwd jenkins_agent
+usermod -aG test_group jenkins_agent
+
+sudo visudo
+    jenkins_user ALL=(ALL) NOPASSWD:ALL
+```
+Ubuntu:
+```
+ssh-keygen -t rsa -b 2048 -C "jenkins_agent@192.168.56.57"
+    /home/peter/.ssh/id_rsa-jenkins_agent@192.168.56.57
+ssh-copy-id -i /home/peter/.ssh/id_rsa-jenkins_agent@192.168.56.57 jenkins_agent@192.168.56.57
+```
 
 # Ansible commands
 
@@ -15,10 +34,7 @@ cd roles && ansible-galaxy init role1 && ansible-galaxy init role2
 
 # Run Ansible
 ```
-sudo ansible-playbook -i inventory/hosts playbook.yml --tags install
-sudo ansible-playbook -i inventory/hosts playbook.yml --tags stop
-sudo ansible-playbook -i inventory/hosts playbook.yml --tags start
-sudo ansible-playbook -i inventory/hosts playbook.yml --tags status
+ansible-playbook -i inventory/hosts playbook.yml 
 ```
 
 # File structure
@@ -41,17 +57,5 @@ my_ansible_project/
 # Conclusions
 Command:
 ```
-sudo ansible-playbook -i inventory/hosts playbook.yml 
-```
-Will triger all tasks in following ordes:
-```
-TASK [role1 : Install Apache (httpd) on Ubuntu] 
-TASK [role1 : Start and enable Apache service on Ubuntu] 
-TASK [role1 : Stop Apache (apache2) service on Ubuntu] 
-TASK [role2 : Check Apache (apache2) service status on Ubuntu] 
-TASK [role2 : Display Apache service status] 
-***********************************************************************************************************
-ok: [localhost] => {
-    "msg": "Status:      Active: inactive (dead) since Wed 2024-01-24 16:40:35 CET; 383ms ago"
-}
+
 ```
