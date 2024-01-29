@@ -1,0 +1,51 @@
+---
+- name: Remove old directory
+  command: "rm -rf /usr/share/tomcat && /tmp/apache-tomcat.tar.gz"
+  tags:
+    - install_tomcat
+
+- name: Download Tomcat
+  get_url:
+    url: "https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.85/bin/apache-tomcat-9.0.85.tar.gz"
+    dest: "/tmp/apache-tomcat.tar.gz"
+  tags:
+    - install_tomcat
+
+- name: Create a tomcat directory
+  file:
+    path: /usr/share/tomcat
+    state: directory
+    owner: tomcat
+    group: tomcat
+  tags:
+    - install_tomcat
+
+- name: Extract tomcat archive
+  unarchive:
+    src: "/tmp/apache-tomcat.tar.gz"
+    dest: /usr/share/tomcat
+    owner: tomcat
+    group: tomcat
+    remote_src: yes
+    extra_opts: "--strip-components=1"
+    # creates: /usr/share/tomcat/bin
+  tags:
+    - install_tomcat
+
+- name: Copy tomcat service file
+  template:
+    src: templates/tomcat.service.j2
+    dest: /etc/systemd/system/my_app.service
+    # dest: /etc/systemd/system/tomcat.service
+  tags:
+    - install_tomcat
+
+
+- name: Start and enable tomcat
+  service:
+    daemon_reload: yes
+    name: my_app
+    state: started
+    enabled: yes
+  tags:
+    - install_tomcat

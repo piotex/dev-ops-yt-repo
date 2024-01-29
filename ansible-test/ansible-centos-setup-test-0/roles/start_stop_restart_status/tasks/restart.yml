@@ -1,0 +1,11 @@
+---
+- name: Restart my_app
+  systemd:
+    name: my_app  
+    state: restarted
+  tags:
+    - restart
+
+
+
+    

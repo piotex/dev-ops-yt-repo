@@ -1,23 +1,10 @@
 ---
-# - name: Apache Ubuntu playbook
-#   hosts: local
-#   gather_facts: no
-#   become: true
-#   roles:
-#     - role: role1
-#     - role: role2
-
-
-- name: Display Disk Space Information
+- name: app_test
   hosts: app_test
+  gather_facts: no
   become: true
   remote_user: jenkins_agent
+  roles:
+    - role: install_all
+    - role: start_stop_restart_status
 
-  tasks:
-    - name: Run df -h command
-      shell: df -h
-      register: df_output
-
-    - name: Display df output
-      debug:
-        var: df_output.stdout_lines

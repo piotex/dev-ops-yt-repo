@@ -1,0 +1,21 @@
+---
+- name: Install Java (OpenJDK)
+  package:
+    name: java-1.8.0-openjdk   # or java-11-openjdk
+    state: present
+  tags:
+    - install_tomcat
+
+- name: Check java_version
+  shell:
+    cmd: "java -version 2>&1 | grep \"openjdk version\""
+  register: java_version
+  ignore_errors: true 
+  tags:
+    - install_tomcat
+
+- name: Display java_version
+  debug:
+    msg: "java_version: {{ java_version.stdout_lines | first }}"
+  tags:
+    - install_tomcat

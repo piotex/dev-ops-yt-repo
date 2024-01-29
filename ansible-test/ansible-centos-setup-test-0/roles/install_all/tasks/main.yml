@@ -1,0 +1,5 @@
+---
+- include: install_basic_packages.yml
+- include: install_java.yml
+- include: add_user.yml
+- include: install_tomcat.yml

@@ -1,0 +1,11 @@
+---
+- name: Stop my_app
+  systemd:
+    name: my_app  
+    state: stopped
+  tags:
+    - stop
+
+
+
+    

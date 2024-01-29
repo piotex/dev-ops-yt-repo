@@ -1,0 +1,12 @@
+---
+- name: Start my_app
+  systemd:
+    name: my_app  
+    state: started
+    enabled: yes  # Ta linijka określa, czy usługa ma być uruchamiana automatycznie przy starcie systemu
+  tags:
+    - start
+
+
+
+    

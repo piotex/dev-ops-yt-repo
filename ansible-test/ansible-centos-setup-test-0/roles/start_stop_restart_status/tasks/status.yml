@@ -1,0 +1,17 @@
+---
+- name: Check my_app status
+  shell:
+    cmd: "systemctl status my_app | grep Active:"
+  register: my_app_status
+  tags:
+    - status
+
+- name: Display my_app status
+  debug:
+    msg: "Status: {{ my_app_status.stdout_lines | first }}"
+  tags:
+    - status
+
+
+
+    

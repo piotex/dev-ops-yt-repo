@@ -1,0 +1,31 @@
+---
+- name: Add EPEL repository
+  yum:
+    name: epel-release
+    state: present
+  tags:
+    - install_tomcat
+
+- name: Install basic packages
+  package:
+    name: ['firewalld','vim','bash-completion','tmux','tree','htop','wget','unzip','curl','git']
+    state: present
+  tags:
+    - install_tomcat
+
+- name: Start firewalld
+  service:
+    name: firewalld
+    state: started
+    enabled: yes
+  tags:
+    - install_tomcat
+
+- name: Open 8080 port on the firewall
+  firewalld:
+    port: 8080/tcp
+    permanent: true
+    state: enabled
+    immediate: yes
+  tags:
+    - install_tomcat
