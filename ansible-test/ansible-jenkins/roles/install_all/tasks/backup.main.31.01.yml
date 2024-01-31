@@ -1,0 +1,258 @@
+---
+- name: Instalacja wymaganego oprogramowania
+  yum:
+    name:
+      - java-1.8.0-openjdk
+      - epel-release
+    state: present
+
+- name: Dodanie repozytorium Jenkinsa z wyłączoną weryfikacją GPG
+  yum_repository:
+    name: jenkins
+    description: Jenkins Official Repository
+    baseurl: http://pkg.jenkins.io/redhat-stable/
+    gpgcheck: no
+
+- name: Instalacja Jenkinsa
+  yum:
+    name: jenkins
+    state: present
+
+- name: Uruchomienie serwisu Jenkinsa
+  systemd:
+    name: jenkins
+    state: started
+    enabled: yes
+
+- name: Poczekaj, aż Jenkins się uruchomi
+  wait_for:
+    port: 8080
+    timeout: 60
+
+- name: Instalacja narzędzia pip dla Pythona
+  yum:
+    name: python3-pip
+    state: present
+
+- name: Instalacja Jenkins Job Builder
+  pip:
+    name: jenkins-job-builder
+
+- name: Skopiowanie plików konfiguracyjnych
+  copy:
+    src: "{{ playbook_dir }}/files"
+    dest: /etc/jenkins_jobs
+    owner: jenkins
+    group: jenkins
+    mode: '0644'
+
+- name: Uzyskanie hasła administratora Jenkinsa
+  shell:
+    cmd: "cat /var/lib/jenkins/secrets/initialAdminPassword"
+  register: jenkins_admin_password
+  ignore_errors: true
+
+- name: Wyświetlenie hasła administratora Jenkinsa
+  debug:
+    var: jenkins_admin_password.stdout
+  ignore_errors: true
+
+- name: Ustawienie konfiguracji Jenkins Job Builder
+  ini_file:
+    path: /etc/jenkins_jobs/jenkins_jobs.ini
+    section: DEFAULT
+    option: user
+    value: admin
+
+# - name: Restart serwisu Jenkinsa
+#   systemd:
+#     name: jenkins
+#     state: restarted
+
+# Configure Jenkins init settings.
+- name: Check if jenkins_init_file exists.
+  stat:
+    path: "{{ jenkins_init_file }}"
+  register: jenkins_init_file_stat
+
+- name: Ensure jenkins_init_file exists.
+  file:
+    path: "{{ jenkins_init_file }}"
+    state: touch
+    mode: 0644
+  when: not jenkins_init_file_stat.stat.exists
+
+- name: Modify variables in init file.
+  lineinfile:
+    dest: "{{ jenkins_init_file }}"
+    insertafter: '^{{ item.option }}='
+    regexp: '^{{ item.option }}=\"\${{ item.option }} '
+    line: '{{ item.option }}="${{ item.option }} {{ item.value }}"'
+    state: present
+    mode: 0644
+  with_items: "{{ jenkins_init_changes }}"
+  register: jenkins_init_prefix
+
+- name: Ensure jenkins_home {{ jenkins_home }} exists.
+  file:
+    path: "{{ jenkins_home }}"
+    state: directory
+    owner: jenkins
+    group: jenkins
+    mode: u+rwx
+    follow: true
+
+- name: Set the Jenkins home directory.
+  lineinfile:
+    dest: "{{ jenkins_init_file }}"
+    regexp: '^JENKINS_HOME=.*'
+    line: 'JENKINS_HOME={{ jenkins_home }}'
+    mode: 0644
+  register: jenkins_home_config
+
+- name: Immediately restart Jenkins on init config changes.
+  service: name=jenkins state=restarted
+  when: jenkins_init_prefix.changed
+  tags: ['skip_ansible_lint']
+
+- name: Set HTTP port in Jenkins config.
+  lineinfile:
+    backrefs: true
+    dest: "{{ jenkins_init_file }}"
+    regexp: '^{{ jenkins_http_port_param }}='
+    line: '{{ jenkins_http_port_param }}={{ jenkins_http_port }}'
+    mode: 0644
+  register: jenkins_http_config
+
+- name: Create custom init scripts directory.
+  file:
+    path: "{{ jenkins_home }}/init.groovy.d"
+    state: directory
+    owner: "{{ jenkins_process_user }}"
+    group: "{{ jenkins_process_group }}"
+    mode: 0775
+
+- name: Configure proxy config for Jenkins
+  template:
+    src: proxy.xml
+    dest: "{{ jenkins_home }}/proxy.xml"
+    owner: "{{ jenkins_process_user }}"
+    group: "{{ jenkins_process_group }}"
+    mode: 0664
+  register: jenkins_proxy_config
+  when:
+    - jenkins_proxy_host | length > 0
+    - jenkins_proxy_port | length > 0
+
+- name: Trigger handlers immediately in case Jenkins was installed
+  meta: flush_handlers
+
+- name: Immediately restart Jenkins on http or user changes.
+  service: name=jenkins state=restarted
+  when: >
+    (jenkins_users_config is defined and jenkins_users_config.changed)
+    or (jenkins_http_config is defined and jenkins_http_config.changed)
+    or (jenkins_home_config is defined and jenkins_home_config.changed)
+    or (jenkins_proxy_config is defined and jenkins_proxy_config.changed)
+  tags: ['skip_ansible_lint']
+
+
+# Make sure Jenkins starts, then configure Jenkins.
+- name: Ensure Jenkins is started and runs on startup.
+  service: name=jenkins state=started enabled=yes
+
+- name: Wait for Jenkins to start up before proceeding.
+  uri:
+    url: "http://{{ jenkins_hostname }}:{{ jenkins_http_port }}{{ jenkins_url_prefix }}/cli/"
+    method: GET
+    return_content: "yes"
+    timeout: 5
+    body_format: raw
+    follow_redirects: "no"
+    status_code: 200,403
+  register: result
+  until: (result.status == 403 or result.status == 200) and (result.content.find("Please wait while") == -1)
+  retries: "{{ jenkins_connection_retries }}"
+  delay: "{{ jenkins_connection_delay }}"
+  changed_when: false
+  check_mode: false
+
+- name: Get the jenkins-cli jarfile from the Jenkins server.
+  get_url:
+    url: "http://{{ jenkins_hostname }}:{{ jenkins_http_port }}{{ jenkins_url_prefix }}/jnlpJars/jenkins-cli.jar"
+    dest: "{{ jenkins_jar_location }}"
+  register: jarfile_get
+  until: "'OK' in jarfile_get.msg or '304' in jarfile_get.msg or 'file already exists' in jarfile_get.msg"
+  retries: 5
+  delay: 10
+  check_mode: false
+
+- name: Remove Jenkins security init scripts after first startup.
+  file:
+    path: "{{ jenkins_home }}/init.groovy.d/basic-security.groovy"
+    state: absent
+
+# Update Jenkins and install configured plugins.
+- name: Get Jenkins admin password from file.
+  slurp:
+    src: "{{ jenkins_admin_password_file }}"
+  register: adminpasswordfile
+  no_log: true
+  when: jenkins_admin_password_file | default(false)
+  tags: ['skip_ansible_lint']
+
+- name: Set Jenkins admin password fact.
+  set_fact:
+    jenkins_admin_password: "{{ adminpasswordfile['stdout'] | default(jenkins_admin_password) }}"
+  no_log: true
+
+# Update Jenkins so that plugin updates don't fail.
+- name: Create Jenkins updates directory.
+  file:
+    path: "{{ jenkins_home }}/updates"
+    state: directory
+    owner: jenkins
+    group: jenkins
+    mode: 0755
+
+- name: Download current plugin updates from Jenkins update site.
+  get_url:
+    url: "{{ jenkins_updates_url }}/update-center.json"
+    dest: "{{ jenkins_home }}/updates/default.json"
+    owner: jenkins
+    group: jenkins
+    mode: 0440
+  changed_when: false
+  register: get_result
+  until: get_result is success
+  retries: 3
+  delay: 2
+
+- name: Remove first and last line from json file.
+  replace:  # noqa 208
+    path: "{{ jenkins_home }}/updates/default.json"
+    regexp: "1d;$d"
+
+- name: Install Jenkins plugins using password.
+  jenkins_plugin:
+    name: "{{ item.name | default(item) }}"
+    version: "{{ item.version | default(omit) }}"
+    jenkins_home: "{{ jenkins_home }}"
+    url_username: "{{ jenkins_admin_username }}"
+    url_password: "{{ jenkins_admin_password }}"
+    state: "{{ 'present' if item.version is defined else jenkins_plugins_state }}"
+    timeout: "{{ jenkins_plugin_timeout }}"
+    updates_expiration: "{{ jenkins_plugin_updates_expiration }}"
+    updates_url: "{{ jenkins_updates_url }}"
+    url: "http://{{ jenkins_hostname }}:{{ jenkins_http_port }}{{ jenkins_url_prefix }}"
+    with_dependencies: "{{ jenkins_plugins_install_dependencies }}"
+  with_items: "{{ jenkins_plugins }}"
+  when: jenkins_admin_password | default(false)
+  notify: restart jenkins
+  tags: ['skip_ansible_lint']
+  register: plugin_result
+  until: plugin_result is success
+  retries: 3
+  delay: 2
+
+  
