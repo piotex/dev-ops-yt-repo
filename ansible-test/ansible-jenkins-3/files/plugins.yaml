@@ -18,6 +18,7 @@ plugins:
   - artifactId: email-ext
   - artifactId: font-awesome-api
   - artifactId: git
+  - artifactId: job-dsl
   - artifactId: git-client
   - artifactId: git-server
   - artifactId: github

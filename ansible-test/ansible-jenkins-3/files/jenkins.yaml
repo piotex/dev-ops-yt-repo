@@ -122,24 +122,3 @@ tool:
     installations:
     - home: "git"
       name: "Default"
-jobs:
-  - script: >
-      folder('testjobs')
-  - script: >
-      pipelineJob('testjobs/default-agent') {
-        definition {
-          cps {
-            script("""\
-              pipeline {
-                agent any
-                stages {
-                  stage ('test') {
-                    steps {
-                      echo "hello"
-                    }
-                  }
-                }
-              }""".stripIndent())
-          }
-        }
-      }  

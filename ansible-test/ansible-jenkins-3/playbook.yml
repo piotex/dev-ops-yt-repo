@@ -168,6 +168,23 @@
         group: jenkins
         state: directory
         recurse: yes
+
+
+    - name: Create directories for Jenkins
+      become: yes
+      file:
+        path: "/var/lib/jenkins/jobs/test_init_proj"
+        state: directory
+        owner: jenkins
+        group: jenkins
+        recurse: yes
+        
+    - name: copy job
+      become: yes
+      copy:
+        dest: "/var/lib/jenkins/jobs/test_init_proj/config.xml"
+        src: "job1.xml"
+
     - name: restart jenkins service
       become: yes
       systemd:
